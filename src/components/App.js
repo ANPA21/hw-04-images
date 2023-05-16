@@ -37,6 +37,8 @@ export class App extends Component {
     const { query, page } = this.state;
     try {
       this.setState({ isLoading: true });
+      this.setState({ error: null });
+
       const fetchedImages = await fetchImages(query, page);
       this.setState(prevState => ({
         images: [...prevState.images, ...fetchedImages],
