@@ -10,7 +10,6 @@ async function fetchImages(query, page) {
       page: page,
     },
   });
-  console.log(r.data.hits);
   return r.data.hits;
 }
 export { fetchImages };
