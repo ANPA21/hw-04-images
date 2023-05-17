@@ -26,7 +26,7 @@ export class App extends Component {
     }
   }
 
-  getSearchQuery = searchQuery => {
+  handleSubmit = searchQuery => {
     this.setState({ query: searchQuery, page: 1, images: [] });
   };
 
@@ -66,7 +66,7 @@ export class App extends Component {
 
     return (
       <Wrapper>
-        <Searchbar onSubmit={this.getSearchQuery} />
+        <Searchbar onSubmit={this.handleSubmit} />
         {images.length !== 0 && <ImageGallery items={this.state.images} />}
         {isLoading && <Loader />}
         {error && <Error>{error}</Error>}
