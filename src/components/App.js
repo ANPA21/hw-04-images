@@ -4,7 +4,7 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Searchbar } from './Searchbar/Searchbar';
 import { Loader } from './Loader/Loader';
 import { Error, Wrapper, Notification } from './App.styled';
-import { fetchImages } from './Api';
+import { fetchImages } from '../Api';
 
 const ERROR_MSG = 'Something went wrong, please try again!';
 const NO_RSLT_MSG = 'No results found.';
@@ -17,20 +17,17 @@ export class App extends Component {
     isLoading: false,
     error: null,
   };
-  componentDidMount() {}
-  async componentDidUpdate(prevProps, prevState) {
-    if (prevState.query !== this.state.query) {
-      this.setState({ page: 1 }, () => {
-        this.getImages();
-      });
-    }
-    if (prevState.page !== this.state.page) {
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.query !== this.state.query ||
+      prevState.page !== this.state.page
+    ) {
       this.getImages();
     }
   }
 
   getSearchQuery = searchQuery => {
-    this.setState({ query: searchQuery });
+    this.setState({ query: searchQuery, page: 1, images: [] });
   };
 
   getImages = async () => {
@@ -38,7 +35,6 @@ export class App extends Component {
     try {
       this.setState({ isLoading: true });
       this.setState({ error: null });
-
       const fetchedImages = await fetchImages(query, page);
       this.setState(prevState => ({
         images: [...prevState.images, ...fetchedImages],
@@ -60,18 +56,24 @@ export class App extends Component {
     const { images, isLoading, error } = this.state;
 
     let noResultsNotification = null;
-    if (this.state.query !== '' && this.state.images.length === 0) {
+    if (
+      this.state.query !== '' &&
+      this.state.images.length === 0 &&
+      !isLoading
+    ) {
       noResultsNotification = true;
     }
 
     return (
       <Wrapper>
         <Searchbar onSubmit={this.getSearchQuery} />
-        <ImageGallery items={this.state.images} />
+        {images.length !== 0 && <ImageGallery items={this.state.images} />}
         {isLoading && <Loader />}
         {error && <Error>{error}</Error>}
         {noResultsNotification && <Notification>{NO_RSLT_MSG}</Notification>}
-        {images.length !== 0 && <Button onClick={this.loadMoreImages} />}
+        {images.length !== 0 && !isLoading && (
+          <Button onClick={this.loadMoreImages} />
+        )}
       </Wrapper>
     );
   }
