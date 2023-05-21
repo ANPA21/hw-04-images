@@ -15,30 +15,43 @@ export const App = () => {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const abortController = new AbortController();
+  // Нужен для catch фазы фетча, что бы знать, что фетч был отменен
+  const [abortedFetch, setAbortedFetch] = useState(false);
+  // Нужен для отображения "Нет результатов"
+  const [noResultsNotification, setNoResultsNotification] = useState(null);
 
   const handleSubmit = searchQuery => {
     setQuery(searchQuery);
     setPage(1);
     setImages([]);
   };
-  const getImages = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const fetchedImages = await fetchImages(query, page, abortController);
-      if (!abortController.signal.aborted) {
-        setImages(prevImages => [...prevImages, ...fetchedImages]);
-      }
-    } catch (error) {
-      setError(ERROR_MSG);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     if (query === '') return;
+    const getImages = async () => {
+      try {
+        setIsLoading(true);
+        // Ресет динамичных стейтов перед фетчем
+        setError(null);
+        setAbortedFetch(false);
+        setNoResultsNotification(null);
+
+        const fetchedImages = await fetchImages(query, page, abortController);
+        if (!abortController.signal.aborted) {
+          setImages(prevImages => [...prevImages, ...fetchedImages]);
+        }
+      } catch (error) {
+        if (error.name === 'CanceledError') {
+          setAbortedFetch(true);
+          return;
+        }
+        setError(ERROR_MSG);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     getImages();
     return () => {
       abortController.abort();
@@ -49,9 +62,10 @@ export const App = () => {
     setPage(prevPage => prevPage + 1);
   };
 
-  let noResultsNotification = null;
-  if (query !== '' && images.length === 0 && !isLoading) {
-    noResultsNotification = true;
+  // Логика отображения "Нет результатов"
+  // Выполняется если есть query, не идет загрузка, фетч не был отменен, но картинок нет
+  if (query !== '' && images.length === 0 && !isLoading && !abortedFetch) {
+    setNoResultsNotification(true);
   }
   return (
     <Wrapper>
