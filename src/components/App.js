@@ -8,7 +8,7 @@ import { fetchImages } from '../Api';
 
 const ERROR_MSG = 'Something went wrong, please try again!';
 const NO_RSLT_MSG = 'No results found.';
-
+// refactor here
 export class App extends Component {
   state = {
     images: [],
