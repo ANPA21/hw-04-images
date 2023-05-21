@@ -18,7 +18,7 @@ export const App = () => {
   // Нужен для catch фазы фетча, что бы знать, что фетч был отменен
   const [abortedFetch, setAbortedFetch] = useState(false);
   // Нужен для отображения "Нет результатов"
-  const [noResultsNotification, setNoResultsNotification] = useState(null);
+  const [noResultsNotification, setNoResultsNotification] = useState(false);
 
   const handleSubmit = searchQuery => {
     setQuery(searchQuery);
@@ -36,8 +36,6 @@ export const App = () => {
         // Ресет динамичных стейтов перед фетчем
         setError(null);
         setAbortedFetch(false);
-        setNoResultsNotification(null);
-
         const fetchedImages = await fetchImages(query, page, abortController);
         if (!abortController.signal.aborted) {
           setImages(prevImages => [...prevImages, ...fetchedImages]);
@@ -64,9 +62,14 @@ export const App = () => {
 
   // Логика отображения "Нет результатов"
   // Выполняется если есть query, не идет загрузка, фетч не был отменен, но картинок нет
-  if (query !== '' && images.length === 0 && !isLoading && !abortedFetch) {
-    setNoResultsNotification(true);
-  }
+  useEffect(() => {
+    if (query !== '' && images.length === 0 && !isLoading && !abortedFetch) {
+      setNoResultsNotification(true);
+    } else {
+      setNoResultsNotification(false);
+    }
+  }, [query, images.length, isLoading, abortedFetch]);
+
   return (
     <Wrapper>
       <Searchbar onSubmit={handleSubmit} />
