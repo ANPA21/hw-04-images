@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from './Button/Button';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Searchbar } from './Searchbar/Searchbar';
@@ -8,73 +8,59 @@ import { fetchImages } from '../Api';
 
 const ERROR_MSG = 'Something went wrong, please try again!';
 const NO_RSLT_MSG = 'No results found.';
-// refactor here
-export class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    isLoading: false,
-    error: null,
-  };
-  componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
-      this.getImages();
-    }
-  }
 
-  handleSubmit = searchQuery => {
-    this.setState({ query: searchQuery, page: 1, images: [] });
-  };
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const abortController = new AbortController();
 
-  getImages = async () => {
-    const { query, page } = this.state;
+  const handleSubmit = searchQuery => {
+    setQuery(searchQuery);
+    setPage(1);
+    setImages([]);
+  };
+  const getImages = async () => {
     try {
-      this.setState({ isLoading: true });
-      this.setState({ error: null });
-      const fetchedImages = await fetchImages(query, page);
-      this.setState(prevState => ({
-        images: [...prevState.images, ...fetchedImages],
-      }));
+      setIsLoading(true);
+      setError(null);
+      const fetchedImages = await fetchImages(query, page, abortController);
+      if (!abortController.signal.aborted) {
+        setImages(prevImages => [...prevImages, ...fetchedImages]);
+      }
     } catch (error) {
-      this.setState({ error: ERROR_MSG });
+      setError(ERROR_MSG);
     } finally {
-      this.setState({ isLoading: false });
+      setIsLoading(false);
     }
   };
 
-  loadMoreImages = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  useEffect(() => {
+    if (query === '') return;
+    getImages();
+    return () => {
+      abortController.abort();
+    };
+  }, [query, page]);
+
+  const loadMoreImages = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  render() {
-    const { images, isLoading, error } = this.state;
-
-    let noResultsNotification = null;
-    if (
-      this.state.query !== '' &&
-      this.state.images.length === 0 &&
-      !isLoading
-    ) {
-      noResultsNotification = true;
-    }
-
-    return (
-      <Wrapper>
-        <Searchbar onSubmit={this.handleSubmit} />
-        {images.length !== 0 && <ImageGallery items={this.state.images} />}
-        {isLoading && <Loader />}
-        {error && <Error>{error}</Error>}
-        {noResultsNotification && <Notification>{NO_RSLT_MSG}</Notification>}
-        {images.length !== 0 && !isLoading && (
-          <Button onClick={this.loadMoreImages} />
-        )}
-      </Wrapper>
-    );
+  let noResultsNotification = null;
+  if (query !== '' && images.length === 0 && !isLoading) {
+    noResultsNotification = true;
   }
-}
+  return (
+    <Wrapper>
+      <Searchbar onSubmit={handleSubmit} />
+      {images.length !== 0 && <ImageGallery items={images} />}
+      {isLoading && <Loader />}
+      {error && <Error>{error}</Error>}
+      {noResultsNotification && <Notification>{NO_RSLT_MSG}</Notification>}
+      {images.length !== 0 && !isLoading && <Button onClick={loadMoreImages} />}
+    </Wrapper>
+  );
+};

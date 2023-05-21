@@ -1,40 +1,35 @@
 import PropTypes from 'prop-types';
-import { Component, Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import Modal from 'react-modal';
 import { ListItem, ListImage } from './ImageGalleryItem.styled';
 import { ImageModal } from 'components/Modal/Modal';
 
 Modal.setAppElement('#root');
 
-export class ImageGalleryItem extends Component {
-  state = {
-    isModalOpen: false,
+export const ImageGalleryItem = ({
+  image: { previewURL, tags, webformatURL },
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const openModal = () => {
+    setIsModalOpen(true);
   };
-  openModal = () => {
-    this.setState({ isModalOpen: true });
+  const closeModal = () => {
+    setIsModalOpen(false);
   };
-  closeModal = () => {
-    this.setState({ isModalOpen: false });
-  };
-  render() {
-    const {
-      image: { previewURL, tags, webformatURL },
-    } = this.props;
-    return (
-      <Fragment>
-        <ListItem className="gallery-item">
-          <ListImage src={previewURL} alt={tags} onClick={this.openModal} />
-        </ListItem>
-        <ImageModal
-          isModalOpen={this.state.isModalOpen}
-          closeModal={this.closeModal}
-          largeImage={webformatURL}
-          tags={tags}
-        />
-      </Fragment>
-    );
-  }
-}
+  return (
+    <Fragment>
+      <ListItem className="gallery-item">
+        <ListImage src={previewURL} alt={tags} onClick={openModal} />
+      </ListItem>
+      <ImageModal
+        isModalOpen={isModalOpen}
+        closeModal={closeModal}
+        largeImage={webformatURL}
+        tags={tags}
+      />
+    </Fragment>
+  );
+};
 
 ImageGalleryItem.propTypes = {
   image: PropTypes.shape({
