@@ -12,6 +12,6 @@ async function fetchImages(query, page, abortController) {
     },
     signal,
   });
-  return r.data.hits;
+  return r.data;
 }
 export { fetchImages };
